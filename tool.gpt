@@ -1,6 +1,6 @@
 Name: Mistral La Plateforme Provider
 Description: Model provider for Mistral models running on La Plateforme
 Model Provider: true
-credential: github.com/gptscript-ai/mistral-laplateforme-provider/credential
+credential: github.com/gptscript-ai/credential as github.com/gptscript-ai/mistral-laplateforme-provider/credential with "Please enter your Mistral La Plateforme API Key" as message and token as field and "MISTRAL_API_KEY" as env
 
 #!sys.daemon /usr/bin/env python3 ${GPTSCRIPT_TOOL_DIR}/main.py
