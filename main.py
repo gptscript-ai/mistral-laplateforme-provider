@@ -50,13 +50,17 @@ async def get_root():
 @app.get("/v1/models")
 async def list_models() -> JSONResponse:
     data: list[dict] = []
-    async for model in client.models.list():
-        data.append({
-            "id": model.id,
-            "object": model.object,
-            "created": model.created,
-            "owned_by": model.owned_by
-        })
+    try:
+        async for model in client.models.list():
+            data.append({
+                "id": model.id,
+                "object": model.object,
+                "created": model.created,
+                "owned_by": model.owned_by
+            })
+    except Exception as e:
+        status_code = e.__dict__.pop("status_code", 500)
+        return JSONResponse(content={"error": str(e)}, status_code=status_code)
     return JSONResponse(content={"object": "list", "data": data})
 
 
@@ -67,17 +71,20 @@ async def chat_completions(request: Request):
 
     messages = data["messages"]
     messages.insert(0, {"role": "system", "content": system})
-
-    stream = await client.chat.completions.create(
-        model=data["model"],
-        messages=messages,
-        max_tokens=data.get("max_tokens", NOT_GIVEN),
-        tools=data.get("tools", NOT_GIVEN),
-        tool_choice=data.get("tool_choice", NOT_GIVEN),
-        stream=data.get("stream", NOT_GIVEN),
-        top_p=data.get("top_p", NOT_GIVEN),
-        temperature=data.get("temperature", NOT_GIVEN),
-    )
+    try:
+        stream = await client.chat.completions.create(
+            model=data["model"],
+            messages=messages,
+            max_tokens=data.get("max_tokens", NOT_GIVEN),
+            tools=data.get("tools", NOT_GIVEN),
+            tool_choice=data.get("tool_choice", NOT_GIVEN),
+            stream=data.get("stream", NOT_GIVEN),
+            top_p=data.get("top_p", NOT_GIVEN),
+            temperature=data.get("temperature", NOT_GIVEN),
+        )
+    except Exception as e:
+        status_code = e.__dict__.pop("status_code", 500)
+        return JSONResponse(content={"error": str(e)}, status_code=status_code)
 
     async def convert_stream(stream: AsyncStream[ChatCompletionChunk]) -> AsyncIterable[str]:
         async for chunk in stream:
