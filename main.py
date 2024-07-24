@@ -88,8 +88,14 @@ async def chat_completions(request: Request):
 
     async def convert_stream(stream: AsyncStream[ChatCompletionChunk]) -> AsyncIterable[str]:
         async for chunk in stream:
-            log("CHUNK: ", chunk.model_dump_json())
-            yield "data: " + str(chunk.model_dump_json()) + "\n\n"
+            transformed = chunk.model_dump(mode="json", exclude_unset=True, exclude_none=True)
+            for choice in transformed['choices']:
+                if choice['delta'].get('tool_calls', None) is not None:
+                    for index, tool_call in enumerate(choice['delta']['tool_calls']):
+                        tool_call["index"] = index
+
+            log("CHUNK: ", json.dumps(transformed))
+            yield "data: " + json.dumps(transformed) + "\n\n"
 
     return StreamingResponse(convert_stream(stream), media_type="application/x-ndjson")
 
@@ -100,6 +106,6 @@ if __name__ == "__main__":
 
     try:
         uvicorn.run("main:app", host="127.0.0.1", port=int(os.environ.get("PORT", "8000")),
-                log_level="debug" if debug else "critical", access_log=debug)
+                    log_level="debug" if debug else "critical", access_log=debug)
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
